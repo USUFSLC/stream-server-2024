@@ -13,8 +13,11 @@ services:
          - "/var/stream/recordings:/var/stream/recordings:rw"
          - "/var/stream/hls:/var/stream/hls:rw"
    fslc-stream:
+      restart: "always" 
       build:
          dockerfile: ./Dockerfile
       env_file: .flaskenv
       ports:
          - "5000:5000"
+      volumes:
+         - "./gunicorn.conf.py:/etc/gunicorn.conf.py"
