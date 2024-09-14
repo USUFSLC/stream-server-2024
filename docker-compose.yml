@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+   nginx:
+      restart: "always"
+      ports:
+         - "8080:80"
+         - "1935:1935"
+      environment:
+         - "RTMP_PORT: 1935"
+      volumes:
+         - "./nginx/nginx.conf:/etc/nginx/nginx.conf.template"
+         - "/var/stream/recordings:/var/stream/recordings:rw"
+         - "/var/stream/hls:/var/stream/hls:rw"
+   fslc-stream:
+      build:
+         dockerfile: ./Dockerfile
+      env_file: .flaskenv
+      ports:
+         - "5000:5000"
