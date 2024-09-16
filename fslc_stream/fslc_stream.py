@@ -26,3 +26,8 @@ def root():
 @requires_authorization(AuthorizationLevel.STREAMER)
 def new_stream():
     return render_template("new-stream.html")
+
+@app.route("/watch/")
+@requires_authorization(AuthorizationLevel.STREAMER)
+def watch_stream():
+    return render_template("watch-stream.html")

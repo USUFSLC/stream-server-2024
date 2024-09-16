@@ -61,15 +61,10 @@ class StreamServerFlask(Flask):
         os.makedirs(os.path.dirname(dbname), exist_ok=True)
         initdb = not os.path.exists(dbname)
         # theoretically this makes the connection threadsafe with a single connection object
-        sqlite3.threadsafety = 3
-        self.sql_handle = sqlite3.connect(dbname, check_same_thread=False)
-
         if initdb:
             with open("schema.sql") as f:
-                self.sql_handle.executescript(f.read());
-
-        cursor = self.sql_handle.execute("SELECT * from streams ORDER BY started")
-        self.streams = [StreamInfo(*el) for el in cursor.fetchall()];
+                sql_handle = sqlite3.connect(dbname)
+                sql_handle.executescript(f.read());
 
 class AuthorizationLevel(IntEnum):
     USER = 0

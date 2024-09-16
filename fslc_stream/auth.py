@@ -99,7 +99,7 @@ def requires_authorization(level: AuthorizationLevel = AuthorizationLevel.USER):
 
             guild = json.loads(guild_result.text)
 
-            request.guild_member = guild
+            g.guild_member = guild
 
             if level >= AuthorizationLevel.STREAMER:
                 roles = STREAMING_ROLES if level == AuthorizationLevel.STREAMER else ADMIN_ROLES

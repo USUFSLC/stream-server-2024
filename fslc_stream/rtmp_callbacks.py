@@ -1,5 +1,13 @@
-from flask import Blueprint, abort, request, make_response, redirect
+import sqlite3
+import time
+
+from flask import Blueprint, abort, current_app, request, make_response, redirect, g
 import requests
+
+from fslc_stream.types import StreamInfo, StreamServerFlask
+from fslc_stream.utils import with_database
+
+current_app: StreamServerFlask
 
 blueprint = Blueprint("rtmp_callbacks", __name__)
 
@@ -13,12 +21,20 @@ def no_proxies():
         return abort(404)
 
 @blueprint.route("/start", methods=["POST"])
+@with_database
 def rtmp_start():
     key = request.form.get("name")
     if key is None:
         return make_response("You shouldn't be making requests here as a user.", 400)
 
-    info = stream_keys.get(key)
+    db: sqlite3.Connection = g.db
+    cursor = db.execute("SELECT * FROM streams WHERE key = ? LIMIT 1", (key,))
+    info = StreamInfo(*cursor.fetchone()[0])
+
+    info.started = int(time.time())
+    db.execute("UPDATE streams SET started = ? WHERE key = ?", (info.started, key))
+    db.commit()
+
     if info is None:
         return make_response("No such key.", 400)
 
