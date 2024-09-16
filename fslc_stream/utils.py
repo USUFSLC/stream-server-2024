@@ -13,11 +13,19 @@ def with_database(f: typing.Callable):
         if "db" not in g:
             g.db = sqlite3.connect(DATABASE)
 
-        result = f(*args, **kwargs)
+        exc = None
+        result = None
+        try:
+            result = f(*args, **kwargs)
+        except Exception as e:
+            exc = e
 
         db = g.pop("db", None)
         if db is not None:
             db.close()
+
+        if exc is not None:
+            raise exc
 
         return result
 

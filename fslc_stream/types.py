@@ -27,11 +27,11 @@ class StreamInfo:
     """
     The UNIX timestamp, in seconds, at which the key was created
     """
-    started: int
+    started: int | None
     """
     The UNIX timestamp, in seconds, at which the stream was started
     """
-    duration: int
+    duration: int | None
     """
     The length of the stream in seconds
     """

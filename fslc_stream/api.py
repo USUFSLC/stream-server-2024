@@ -22,8 +22,8 @@ def new_stream():
     new_stream = StreamInfo(
         key,
         int(time.time()),
-        0,
-        0,
+        None,
+        None,
         data["name"],
         data["presenter"],
         data["description"]
