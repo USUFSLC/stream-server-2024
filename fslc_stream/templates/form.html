@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+{% block explanation %}
+{% endblock %}
+
+<form
+  hx-target="#response"
+  hx-post="/api/new"
+  hx-ext="json-enc"
+>
+  {% for field in fields %}
+  <input
+    type="{{field.get('type', 'text')}}"
+    name="{{field['name']}}"
+    placeholder="{{field.get('placeholder', '')}}"
+    {% if field.get('required', False) %}required{% endif %}
+  ><br>
+  {% endfor %}
+  <button type="submit">{% block submit_text %}Send{% endblock %}</button>
+</form>
+
+<div id="response"></div>
+{% endblock %}

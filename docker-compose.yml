@@ -20,4 +20,5 @@ services:
       ports:
          - "5000:5000"
       volumes:
+         - "./export:/fslc_streams/export"
          - "./gunicorn.conf.py:/etc/gunicorn.conf.py"

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}
+Create new stream
+{% endblock %}
+
+{% block content %}
+<p>Enter the details below to get a stream key for this meeting.</p>
+
+<input
+  type="text"
+  name="name"
+  id="name"
+  placeholder="Human-friendly name"
+>
+<br><br>
+<input
+  type="text"
+  name="presenter"
+  id="presenter"
+  placeholder="Presenter's name"
+>
+<br><br>
+<textarea
+  name="description"
+  id="description"
+  placeholder="Description of the stream"
+></textarea>
+<br><br>
+<button id="submit" onclick="getKey()">Get Key!</button>
+<br><br>
+<input
+  type="text"
+  name="key"
+  id="key_input"
+  placeholder="Stream key"
+  style="width: 300px;"
+  disabled
+>
+<button name="copy" id="copy_key" onclick="copyKey()">Copy Key</button>
+<div id="response"></div>
+<script>
+document.getElementById("key_input").value = "";
+
+function getKey() {
+  document.getElementById("submit").disabled = true;
+  fetch(
+    "{{ url_for('stream_api.new_stream') }}",
+    {
+      "method": "POST",
+      "body": JSON.stringify({
+        "name": document.getElementById("name").value,
+        "presenter": document.getElementById("presenter").value,
+        "description": document.getElementById("description").value,
+      }),
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  )
+    .then((resp) => resp.json())
+    .then((json) => {
+      document.getElementById("key_input").value = json["key"];
+      document.getElementById("response").innerHTML = "Successfully got your key";
+      document.getElementById("submit").disabled = false;
+    })
+    .catch((e) => {
+      console.error(e);
+      document.getElementById("response").innerHTML = "Failed to get key. Check devtools for more info.";
+      document.getElementById("submit").disabled = false;
+    })
+}
+
+function copyKey() {
+  let key = document.getElementById("key_input").value;
+  if (key) {
+    navigator.clipboard.writeText(key);
+  }
+}
+</script>
+{% endblock %}
