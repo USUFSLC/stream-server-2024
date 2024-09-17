@@ -1,10 +1,12 @@
 import typing
+import logging
 from time import time
 import json
 import secrets
 from urllib.parse import urlparse
 from os import environ
-from flask import Flask, render_template, request, make_response, jsonify, redirect
+from flask import Flask, current_app, render_template, request, make_response, jsonify, redirect
+from werkzeug.middleware.proxy_fix import ProxyFix
 import requests
 
 from fslc_stream.types import DiscordAuthError, StreamServerFlask, AuthorizationLevel
@@ -14,6 +16,11 @@ from fslc_stream.rtmp_callbacks import blueprint as rtmp_blueprint
 from fslc_stream.api import blueprint as api_blueprint
 
 app = StreamServerFlask(__name__, template_folder="./templates")
+
+app.wsgi_app = ProxyFix(
+    app.wsgi_app, x_for=1, x_proto=1, x_host=1
+)
+
 app.register_blueprint(auth_blueprint, url_prefix="/login")
 app.register_blueprint(rtmp_blueprint, url_prefix="/rtmp")
 app.register_blueprint(api_blueprint, url_prefix="/api")

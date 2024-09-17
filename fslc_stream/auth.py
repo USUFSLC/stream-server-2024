@@ -50,7 +50,7 @@ def login():
     return redirect(
         "https://discord.com/api/oauth2/authorize"
         f"?client_id={environ.get('DISCORD_CLIENT_ID')}"
-        f"&redirect_uri={url_for('discord_oauth.callback', **request.args)}"
+        f"&redirect_uri={url_for('discord_oauth.callback', _external=True)}"
         f"&response_type=code"
         f"&scope=identify guilds guilds.members.read"
     )
@@ -67,7 +67,7 @@ def callback():
             "client_id": environ["DISCORD_CLIENT_ID"],
             "client_secret": environ["DISCORD_CLIENT_SECRET"],
             "grant_type": "authorization_code",
-            "redirect_uri": f"{request.host_url}login/callback",
+            "redirect_uri": url_for('discord_oauth.callback', _external=True),
             "scope": "identify guilds guilds.members.read",
             "code": code,
         }
@@ -76,7 +76,7 @@ def callback():
     try:
         return make_access_token_response(token_request_result)
     except DiscordAuthError as e:
-        return make_response("Error: ", e.error_str + ". Discord says: " + str(e.discord_response))
+        return make_response("Error: " + e.error_str + ". Discord says: " + str(e.discord_response), 403)
 
 def requires_authorization(level: AuthorizationLevel = AuthorizationLevel.USER):
     def decorator(f: typing.Callable):
@@ -84,7 +84,7 @@ def requires_authorization(level: AuthorizationLevel = AuthorizationLevel.USER):
         def wrapped(*args, **kwargs):
             access_token = request.cookies.get("access_token")
             if access_token is None:
-                return redirect(url_for("discord_oauth.login", next=request.url))
+                return redirect(url_for("discord_oauth.login"))
 
             headers = {
                 "Authorization": f"Bearer {access_token}",

@@ -11,15 +11,6 @@ current_app: StreamServerFlask
 
 blueprint = Blueprint("rtmp_callbacks", __name__)
 
-# these routes should only be available if you're talking directly to the server
-# that should mean that only other programs running on the same network as this docker container can access it
-# if you're not, i don't want you to even know they exist
-# this function returns the default 404 message for everything here, even if the route isn't declared
-@blueprint.before_app_request
-def no_proxies():
-    if "X-Forwarded-For" in request.headers:
-        return abort(404)
-
 @blueprint.before_request
 def needs_valid_name():
     if request.method != "POST":
@@ -51,6 +42,9 @@ def rtmp_start():
         cursor.execute("INSERT INTO current_stream VALUES(?)", (key,))
     else:
         return make_response("A stream is ongoing.", 409)
+
+    if info.started is not None or info.duration is not None:
+        return make_response("That stream has already started.", 409)
 
     db.commit()
 
