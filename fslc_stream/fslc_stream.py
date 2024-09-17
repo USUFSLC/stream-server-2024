@@ -17,6 +17,11 @@ from fslc_stream.api import blueprint as api_blueprint
 
 app = StreamServerFlask(__name__, template_folder="./templates")
 
+if __name__ != '__main__':
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
+
 app.wsgi_app = ProxyFix(
     app.wsgi_app, x_for=1, x_proto=1, x_host=1
 )

@@ -32,19 +32,31 @@ def rtmp_start():
 
     db: sqlite3.Connection = g.db
     cursor = db.execute("SELECT * FROM streams WHERE key = ? LIMIT 1", (key,))
-    info = StreamInfo(*cursor.fetchone()[0])
+    info_tup = cursor.fetchone()
+    current_app.logger.info("Stream Key Info: %s", info_tup)
 
-    info.started = int(time.time())
-    cursor.execute("UPDATE streams SET started = ? WHERE key = ?", (info.started, key))
+    if info_tup is None:
+        return make_response("Non-existing stream.", 409)
+
+    info = StreamInfo(*info_tup)
+
+    current_app.logger.info("Stream Info Class: %s", info)
 
     cursor.execute("SELECT * FROM current_stream")
+    current_stream_tup = cursor.fetchone()
+    current_app.logger.info("Current Stream Info: %s", current_stream_tup)
+
     if cursor.fetchone() is None:
         cursor.execute("INSERT INTO current_stream VALUES(?)", (key,))
     else:
         return make_response("A stream is ongoing.", 409)
 
     if info.started is not None or info.duration is not None:
+        current_app.logger.info("Current Stream Info: %s", current_stream_tup)
         return make_response("That stream has already started.", 409)
+
+    info.started = int(time.time())
+    cursor.execute("UPDATE streams SET started = ? WHERE key = ?", (info.started, key))
 
     db.commit()
 
