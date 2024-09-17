@@ -10,4 +10,4 @@ COPY ./fslc_stream/ ./fslc_stream
 
 EXPOSE 5000
 
-CMD gunicorn -w 4 -b '0.0.0.0:5000' -c '/etc/gunicorn.conf.py' 'fslc_stream.fslc_stream:app'
+CMD ["/usr/local/bin/python3", "-m", "gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "-c", "/etc/gunicorn.conf.py", "fslc_stream.fslc_stream:app"]
