@@ -30,10 +30,18 @@ class StreamInfo:
     started: int | None
     """
     The UNIX timestamp, in seconds, at which the stream was started
+    If None, this means the stream has not been started
     """
-    duration: int | None
+    ended: int | None
     """
-    The length of the stream in seconds
+    The UNIX timestamp, in seconds, at which the stream was ended
+    If None, this means the stream has not ended
+    """
+    processed: int
+    """
+    Whether this stream has been processed
+    0 = no
+    any other number = yes
     """
     name: str
     """

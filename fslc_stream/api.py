@@ -24,10 +24,11 @@ def new_stream():
         int(time.time()),
         None,
         None,
+        0,
         data["name"],
         data["presenter"],
         data["description"]
     )
-    g.db.execute("INSERT INTO streams VALUES(?, ?, ?, ?, ?, ?, ?)", astuple(new_stream))
+    g.db.execute("INSERT INTO streams VALUES(?, ?, ?, ?, ?, ?, ?, ?)", astuple(new_stream))
     g.db.commit()
     return jsonify({ "key": key })
