@@ -3,6 +3,7 @@ version: '3'
 services:
    nginx:
       restart: "always"
+      image: "docker.io/alfg/nginx-rtmp"
       ports:
          - "8080:80"
          - "1935:1935"
