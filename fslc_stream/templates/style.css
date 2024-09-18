@@ -57,6 +57,22 @@ strong {
   color: #fbf1c7;
 }
 
+nav {
+  text-align: center;
+}
+
+nav > a {
+  margin: 0 5px;
+}
+
+nav::before {
+  content: "[";
+}
+
+nav::after {
+  content: "]";
+}
+
 input, textarea {
     background-color: #282828; /* Dark background */
     color: #ebdbb2; /* Light foreground */
@@ -91,7 +107,7 @@ input:disabled, textarea:disabled {
 }
 
 input:disabled::placeholder {
-	color: #665c54;
+	color: #928374;
 }
 
 /* Additional styles for buttons */
@@ -108,4 +124,8 @@ button {
 button:hover, button:focus {
     background-color: #de869b;
     outline: none;
+}
+
+video {
+  background-color: #1d2021;
 }

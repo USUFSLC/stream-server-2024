@@ -8,9 +8,17 @@
     <style>
       {% include "style.css" %}
     </style>
+    {% block scripts %}{% endblock %}
   </head>
   <body>
     <h1>{{ self.title() }}</h1>
+
+    <nav>
+      <a href="/">Home</a>
+      <a href="{{ url_for('watch_stream') }}">Watch Stream</a>
+      <a href="{{ url_for('new_stream') }}">Start Stream</a>
+    </nav>
+
     {% block content %}{% endblock %}
   </body>
 </html>

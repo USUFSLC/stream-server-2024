@@ -5,7 +5,7 @@ import json
 import secrets
 from urllib.parse import urlparse
 from os import environ
-from flask import Flask, current_app, render_template, request, make_response, jsonify, redirect
+from flask import Flask, current_app, render_template, request, make_response, jsonify, redirect, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 import requests
 
@@ -32,7 +32,7 @@ app.register_blueprint(api_blueprint, url_prefix="/api")
 
 @app.route("/")
 def root():
-    return redirect("/new")
+    return redirect(url_for('watch_stream'))
 
 @app.route("/new/")
 @requires_authorization(AuthorizationLevel.STREAMER)
@@ -40,6 +40,5 @@ def new_stream():
     return render_template("new-stream.html")
 
 @app.route("/watch/")
-@requires_authorization(AuthorizationLevel.STREAMER)
 def watch_stream():
     return render_template("watch-stream.html")

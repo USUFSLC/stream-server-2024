@@ -106,12 +106,11 @@ def rtmp_end():
     if info.started is None or info.ended is not None:
         return make_response("Stream has not started or has already ended.", 409)
 
+    info.ended = int(time.time())
+
     with stream_end_lock:
         cursor.execute("UPDATE streams SET ended = ? WHERE key = ?", (info.ended, key))
         db.commit()
-
-    if info is None:
-        return make_response("No such key.", 400)
 
     return make_response("It's so over...")
 
