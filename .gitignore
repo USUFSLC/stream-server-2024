@@ -2,5 +2,6 @@
 .venv
 .env
 .flaskenv
+.python-version
 export
 media

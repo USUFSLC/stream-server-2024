@@ -96,7 +96,7 @@ class Stream(Base):
     def as_json(self, with_event=False) -> dict[str, Any]:
         result = {
             "id": str(self.id),
-            "created_at": self.created_at,
+            "created_at": self.created_at.timestamp,
             "started_at": None if self.started_at is None else self.started_at.timestamp,
             "ended_at": None if self.ended_at is None else self.ended_at.timestamp,
             "processed_at": None if self.processed_at is None else self.processed_at.timestamp,
