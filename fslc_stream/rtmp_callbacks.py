@@ -2,13 +2,9 @@ import sqlite3
 import time
 import threading
 
-from flask import Blueprint, abort, current_app, request, make_response, redirect, g
-import requests
+from flask import Blueprint, current_app, request, make_response, g
 
-from fslc_stream.types import StreamInfo, StreamServerFlask
-from fslc_stream.utils import with_database
-
-current_app: StreamServerFlask
+from fslc_stream.types import StreamInfo
 
 blueprint = Blueprint("rtmp_callbacks", __name__)
 
@@ -27,7 +23,6 @@ def delete_key(exception):
         g.pop("key")
 
 @blueprint.post("/start")
-@with_database
 def rtmp_start():
     key = g.stream_key
     db: sqlite3.Connection = g.db
@@ -61,7 +56,6 @@ def rtmp_start():
     return make_response("Go ahead!")
 
 @blueprint.post("/update")
-@with_database
 def rtmp_update():
     db: sqlite3.Connection = g.db
 
@@ -78,7 +72,6 @@ def rtmp_update():
 stream_end_lock = threading.Lock()
 
 @blueprint.post("/end")
-@with_database
 def rtmp_end():
     key = g.stream_key
     db: sqlite3.Connection = g.db
@@ -115,7 +108,6 @@ def rtmp_end():
     return make_response("It's so over...")
 
 @blueprint.post("/done")
-@with_database
 def rtmp_done():
     key = g.stream_key
     db: sqlite3.Connection = g.db

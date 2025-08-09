@@ -11,7 +11,7 @@ services:
          - "RTMP_PORT: 1935"
       volumes:
          - "./nginx/nginx.conf:/etc/nginx/nginx.conf.template"
-         - "/var/stream:/var/stream:rw"
+         - "./media:/var/stream:rw"
    fslc-stream:
       restart: "always" 
       build:
