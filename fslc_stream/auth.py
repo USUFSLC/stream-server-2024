@@ -33,15 +33,18 @@ def requires_authorization(required_level: AuthorizationLevel = AuthorizationLev
             access_token = authorization.token
 
             key = jwks.get_signing_key_from_jwt(access_token)
-            payload = jwt.decode(
-                access_token,
-                key,
-                audience=OIDC_CLIENT_ID,
-                algorithms=["ES256"],
-                options={
-                    "verify_jti": False
-                }
-            )
+            try:
+                payload = jwt.decode(
+                    access_token,
+                    key,
+                    audience=OIDC_CLIENT_ID,
+                    algorithms=["ES256"],
+                    options={
+                        "verify_jti": False
+                    }
+                )
+            except jwt.exceptions.ExpiredSignatureError:
+                return make_response("JWT is expired.", 401)
 
             g.payload = payload
 
@@ -55,7 +58,7 @@ def requires_authorization(required_level: AuthorizationLevel = AuthorizationLev
             )
 
             if not userinfo_result.ok:
-                return make_response("JWT is expired.", 403)
+                return make_response("Failed to get userinfo.", 401)
 
             userinfo_json = userinfo_result.json()
             auth_level = get_auth_level(userinfo_json["roles"])
