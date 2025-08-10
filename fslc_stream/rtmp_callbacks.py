@@ -9,8 +9,9 @@ from fslc_stream.db.context import db
 
 blueprint = Blueprint("rtmp_callbacks", __name__)
 
-def get_stream_by_key(key: str) => Stream | None:
-    stream_id, token = ".".split(key)
+def get_stream_by_key(key: str) -> Stream | None:
+    print(key)
+    stream_id, token = key.split('.')
 
     query = select(Stream).where(and_(
         Stream.id == stream_id,
