@@ -1,12 +1,25 @@
-import sqlite3
-import time
+from datetime import datetime
 import threading
 
-from flask import Blueprint, current_app, request, make_response, g
+from flask import Blueprint, request, make_response, g
+from sqlalchemy import and_, select
 
-from fslc_stream.types import StreamInfo
+from fslc_stream.db.models import Stream
+from fslc_stream.db.context import db
 
 blueprint = Blueprint("rtmp_callbacks", __name__)
+
+def get_stream_by_key(key: str) => Stream | None:
+    stream_id, token = ".".split(key)
+
+    query = select(Stream).where(and_(
+        Stream.id == stream_id,
+        Stream.token == token,
+    ))
+    stream = db.session.scalar(query)
+
+    return stream
+
 
 @blueprint.before_request
 def needs_valid_name():
@@ -17,116 +30,78 @@ def needs_valid_name():
     if key is None:
         return make_response("You shouldn't be making requests here as a user.", 400)
 
+
 @blueprint.teardown_request
-def delete_key(exception):
+def delete_key(_):
     if "key" in g:
         g.pop("key")
 
+
 @blueprint.post("/start")
 def rtmp_start():
-    key = g.stream_key
-    db: sqlite3.Connection = g.db
+    stream = get_stream_by_key(g.stream_key)
 
-    cursor = db.execute("SELECT * FROM streams WHERE key = ? LIMIT 1", (key,))
-    info_tup = cursor.fetchone()
+    if stream is None:
+        return make_response("Invalid key.", 400)
 
-    if info_tup is None:
-        return make_response("Non-existing stream.", 409)
+    if stream.started_at is not None:
+        return make_response("Stream already started.", 409)
 
-    info = StreamInfo(*info_tup)
+    stream.started_at = datetime.now()
 
-    current_app.logger.info("Stream Info Class: %s", info)
-
-    cursor.execute("SELECT * FROM current_stream")
-    current_stream_tup = cursor.fetchone()
-
-    if current_stream_tup is None:
-        cursor.execute("INSERT INTO current_stream VALUES(?)", (key,))
-    else:
-        return make_response("A stream is ongoing.", 409)
-
-    if info.started is not None or info.ended is not None or info.processed:
-        return make_response("That stream has already started.", 409)
-
-    info.started = int(time.time())
-    cursor.execute("UPDATE streams SET started = ? WHERE key = ?", (info.started, key))
-
-    db.commit()
+    db.session.add(stream)
+    db.session.commit()
 
     return make_response("Go ahead!")
 
 @blueprint.post("/update")
 def rtmp_update():
-    db: sqlite3.Connection = g.db
+    stream = get_stream_by_key(g.stream_key)
 
-    cursor = db.execute("SELECT * FROM current_stream")
-    data = cursor.fetchone()
-    if data is None:
-        return make_response("There is no stream ongoing", 400)
+    if stream is None:
+        return make_response("Invalid key.", 400)
 
-    if data[0] == g.stream_key:
+    if stream.started_at is None:
+        return make_response("Stream has not started.", 409)
+
+    if stream.ended_at is None:
         return make_response("Keep going!", 200)
-    else:
-        return make_response("Wrong stream, bucko!", 409)
+    return make_response("Stream ended.", 409)
 
 stream_end_lock = threading.Lock()
 
 @blueprint.post("/end")
 def rtmp_end():
-    key = g.stream_key
-    db: sqlite3.Connection = g.db
+    stream = get_stream_by_key(g.stream_key)
 
-    cursor = db.execute("SELECT * FROM streams WHERE key = ? LIMIT 1", (key,))
-    info_tup = cursor.fetchone()
+    if stream is None:
+        return make_response("Invalid key.", 400)
 
-    if info_tup is None:
-        return make_response("Non-existing stream.", 409)
+    if stream.ended_at is not None:
+        return make_response("Stream already ended", 409)
 
-    info = StreamInfo(*info_tup)
-
-    current_app.logger.info("Stream Info Class: %s", info)
-
-    cursor.execute("SELECT * FROM current_stream")
-    current_stream_tup = cursor.fetchone()
-
-    if current_stream_tup is not None:
-        if current_stream_tup[0] != key:
-            return make_response("Ending a stream that is not ongoing.", 409)
-        cursor.execute("DELETE FROM current_stream")
-    else:
-        return make_response("A stream is ongoing.", 409)
-
-    if info.started is None or info.ended is not None:
-        return make_response("Stream has not started or has already ended.", 409)
-
-    info.ended = int(time.time())
+    stream.ended_at = datetime.now()
+    db.session.add(stream)
 
     with stream_end_lock:
-        cursor.execute("UPDATE streams SET ended = ? WHERE key = ?", (info.ended, key))
-        db.commit()
+        db.session.commit()
 
     return make_response("It's so over...")
 
 @blueprint.post("/done")
 def rtmp_done():
-    key = g.stream_key
-    db: sqlite3.Connection = g.db
+    stream = get_stream_by_key(g.stream_key)
 
-    cursor = db.execute("SELECT * FROM streams WHERE key = ? LIMIT 1", (key,))
-    info_tup = cursor.fetchone()
+    if stream is None:
+        return make_response("Invalid key.", 400)
 
-    if info_tup is None:
-        return make_response("Non-existing stream.", 409)
+    if stream.processed_at is not None:
+        return make_response("Stream already processed", 409)
 
-    info = StreamInfo(*info_tup)
-
-    current_app.logger.info("Stream Info Class: %s", info)
-
-    if info.started is None or info.processed:
-        return make_response("Stream has not started or has already been processed.", 409)
+    stream.processed_at = datetime.now()
+    db.session.add(stream)
 
     with stream_end_lock:
-        cursor.execute("UPDATE streams SET processed = ? WHERE key = ?", (1, key))
-        db.commit()
+        db.session.commit()
 
     return make_response("We're so back!")
