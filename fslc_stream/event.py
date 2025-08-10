@@ -9,11 +9,11 @@ from fslc_stream.types import AuthorizationLevel
 from fslc_stream.utils import parse_datetime_permissive
 
 
-blueprint = Blueprint("stream_api", __name__)
+blueprint = Blueprint("event_api", __name__)
 
 
 @blueprint.post("/")
-@requires_authorization(AuthorizationLevel.STREAMER)
+@requires_authorization(AuthorizationLevel.ADMIN)
 def new_event():
     data = request.json
     if data is None:
@@ -67,7 +67,7 @@ def get_events():
 def get_event(uuid: UUID):
     with_streams = "with-streams" in request.args
     query = select(Event).where(Event.id == uuid)
-    event = db.session.scalars(query).first()
+    event = db.session.scalar(query)
 
     if event is None:
         return make_response("No such event.", 404)
@@ -83,7 +83,7 @@ def get_streams(uuid: UUID):
     return stream
 
 
-@blueprint.post("/<uuid:uuid>/stream")
+@blueprint.post("/<uuid:uuid>/stream/")
 @requires_authorization(AuthorizationLevel.STREAMER)
 def add_stream(uuid: UUID):
     allow_callback_properties = "allow-callback-properties" in request.args

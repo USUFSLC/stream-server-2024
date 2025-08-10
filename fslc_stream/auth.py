@@ -60,6 +60,8 @@ def requires_authorization(required_level: AuthorizationLevel = AuthorizationLev
             userinfo_json = userinfo_result.json()
             auth_level = get_auth_level(userinfo_json["roles"])
 
+            g.auth_level = auth_level
+
             if auth_level >= required_level:
                 return f(*args, **kwargs)
             else:
@@ -75,3 +77,5 @@ def requires_authorization(required_level: AuthorizationLevel = AuthorizationLev
 def teardown_payload(_):
     if "payload" in g:
         g.pop("payload")
+    if "auth_level" in g:
+        g.pop("auth_level")
