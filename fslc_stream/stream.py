@@ -48,7 +48,7 @@ def get_stream(uuid: UUID):
         return make_response("No such stream.", 404)
     return stream.as_json()
 
-@blueprint.get("/<uuid:uuid>/token")
+@blueprint.get("/<uuid:uuid>/token/")
 @requires_authorization(AuthorizationLevel.STREAMER)
 def get_stream_token(uuid: UUID):
     auth_level: AuthorizationLevel = g.auth_level
