@@ -5,7 +5,6 @@ RUN pip install -r /tmp/requirements.txt
 
 WORKDIR /fslc_stream
 
-COPY ./schema.sql ./schema.sql
 COPY ./fslc_stream/ ./fslc_stream
 
 EXPOSE 5000
