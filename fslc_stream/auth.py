@@ -1,7 +1,7 @@
 from functools import wraps
 import typing
 from os import environ
-from flask import current_app, g, request, make_response
+from flask import g, request, make_response
 import jwt
 from jwt import PyJWKClient
 import requests
@@ -26,11 +26,10 @@ def requires_authorization(required_level: AuthorizationLevel = AuthorizationLev
     def decorator(f: typing.Callable):
         @wraps(f)
         def wrapped(*args, **kwargs):
-            authorization = request.authorization
-            if authorization is None or authorization.type != "bearer" or authorization.token is None:
-                return make_response("Please submit a JWT with bearer authorization.", 401)
-
-            access_token = authorization.token
+            if "__Secure-idToken" in request.cookies:
+                access_token = request.cookies["__Secure-idToken"]
+            else:
+                return make_response("Please submit a JWT in a cookie.", 401)
 
             key = jwks.get_signing_key_from_jwt(access_token)
             try:
@@ -48,20 +47,7 @@ def requires_authorization(required_level: AuthorizationLevel = AuthorizationLev
 
             g.payload = payload
 
-            headers = {
-                "Authorization": f"Bearer {access_token}",
-            }
-
-            userinfo_result = requests.get(
-                f"https://idm.linux.usu.edu/oauth2/openid/{OIDC_CLIENT_ID}/userinfo",
-                headers=headers
-            )
-
-            if not userinfo_result.ok:
-                return make_response("Failed to get userinfo.", 401)
-
-            userinfo_json = userinfo_result.json()
-            auth_level = get_auth_level(userinfo_json["roles"])
+            auth_level = get_auth_level(payload["roles"])
 
             g.auth_level = auth_level
 
