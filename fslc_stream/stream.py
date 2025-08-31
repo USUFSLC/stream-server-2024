@@ -25,7 +25,9 @@ def new_stream():
             allow_callback_properties
         )
     except SerializationError as e:
-        return make_response(e.msg, 400)
+        resp = make_response(e.msg, 400)
+        resp.mimetype = "text/plain"
+        return resp;
 
     db.session.add(stream)
     db.session.commit()
@@ -37,16 +39,17 @@ def new_stream():
 def current_streams():
     query = select(Stream).where(and_(Stream.started_at != None, Stream.ended_at == None))
 
-    return [s.as_json() for s in db.session.scalars(query)]
+    return [s.as_json() | { "token": s.token } for s in db.session.scalars(query)]
 
 @blueprint.get("/<uuid:uuid>/")
 def get_stream(uuid: UUID):
+    with_event = "with-event" in request.args
     query = select(Stream).where(Stream.id == uuid)
     stream = db.session.scalar(query)
 
     if stream is None:
         return make_response("No such stream.", 404)
-    return stream.as_json()
+    return stream.as_json(with_event)
 
 @blueprint.get("/<uuid:uuid>/token/")
 @requires_authorization(AuthorizationLevel.STREAMER)

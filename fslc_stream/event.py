@@ -22,7 +22,9 @@ def new_event():
     try:
         event = Event.from_json(data)
     except SerializationError as e:
-        return make_response(e.msg, 400)
+        resp = make_response(e.msg, 400)
+        resp.mimetype = "text/plain"
+        return resp;
 
     db.session.add(event)
     db.session.commit()
@@ -31,8 +33,8 @@ def new_event():
 
 
 @blueprint.get("/")
-@requires_authorization(AuthorizationLevel.USER)
 def get_events():
+    with_streams = "with-streams" in request.args
     query = select(Event) \
         .order_by(Event.starts_at)
 
@@ -54,9 +56,9 @@ def get_events():
             pass
         to_dt = parse_datetime_permissive(to_time)
 
-        query = query.where(Event.ends_at <= to_dt)
+        query = query.where(Event.starts_at <= to_dt)
 
-    events = [e.as_json() for e in db.session.scalars(query)]
+    events = [e.as_json(with_streams) for e in db.session.scalars(query)]
 
     if len(events) == 0:
         return make_response("No events in time frame.", 404)
