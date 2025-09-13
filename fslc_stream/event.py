@@ -1,6 +1,6 @@
 from uuid import UUID
-from flask import Blueprint, make_response, request
-from sqlalchemy import select
+from flask import Blueprint, current_app, make_response, request
+from sqlalchemy import delete, select
 
 from fslc_stream.auth import requires_authorization
 from fslc_stream.db.context import db
@@ -74,6 +74,43 @@ def get_event(uuid: UUID):
     if event is None:
         return make_response("No such event.", 404)
     return event.as_json(with_streams)
+
+
+@blueprint.delete("/<uuid:uuid>/")
+@requires_authorization(AuthorizationLevel.ADMIN)
+def delete_event(uuid: UUID):
+    query = delete(Event).where(Event.id == uuid)
+    result = db.session.execute(query)
+
+    if result.rowcount == 0:
+        return make_response("No such event.", 404)
+
+    db.session.commit()
+    return {"ok": "deleted"}
+
+
+@blueprint.patch("/<uuid:uuid>/")
+@requires_authorization(AuthorizationLevel.ADMIN)
+def patch_event(uuid: UUID):
+    data = request.json
+    if not isinstance(data, dict):
+        return make_response("need json object to update event", 400)
+
+    query = select(Event).where(Event.id == uuid)
+    event = db.session.scalar(query)
+
+    if event is None:
+        return make_response("no such event", 400)
+
+    if "location" in data:
+        event.location = data["location"]
+    if "title" in data:
+        event.title = data["title"]
+    if "description" in data:
+        event.description = data["description"]
+
+    db.session.commit()
+    return {"ok": "updated"}
 
 
 @blueprint.get("/<uuid:uuid>/stream/")

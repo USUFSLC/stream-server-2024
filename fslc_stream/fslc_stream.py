@@ -1,13 +1,16 @@
 import logging
 from os import environ
 from werkzeug.middleware.proxy_fix import ProxyFix
-
-from fslc_stream.db.context import db
-from fslc_stream.auth import teardown_payload
-from fslc_stream.types import StreamServerFlask
-from fslc_stream.api import blueprint as api_blueprint
+from dotenv import load_dotenv
 
 def create_app():
+    load_dotenv(".flask.env")
+    load_dotenv(".postgres.env")
+
+    from fslc_stream.db.context import db, migrate
+    from fslc_stream.auth import teardown_payload
+    from fslc_stream.types import StreamServerFlask
+    from fslc_stream.api import blueprint as api_blueprint
     app = StreamServerFlask(__name__)
 
     if "SQLALCHEMY_DATABASE_URI" in environ:
@@ -17,6 +20,7 @@ def create_app():
             f"postgresql://{environ.get('POSTGRES_USER', 'postgres')}:{environ['POSTGRES_PASSWORD']}@postgres:5432"
 
     db.init_app(app)
+    migrate.init_app(app, db)
 
     with app.app_context():
         db.create_all()
