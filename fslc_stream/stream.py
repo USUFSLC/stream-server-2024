@@ -1,6 +1,6 @@
 from uuid import UUID
 from flask import Blueprint, g, request, make_response
-from sqlalchemy import and_, select
+from sqlalchemy import Result, and_, delete, select
 from fslc_stream.auth import requires_authorization
 from fslc_stream.db.context import db
 from fslc_stream.db.models import SerializationError, Stream
@@ -50,6 +50,17 @@ def get_stream(uuid: UUID):
     if stream is None:
         return make_response("No such stream.", 404)
     return stream.as_json(with_event)
+
+@blueprint.delete("/<uuid:uuid>/")
+def delete_stream(uuid: UUID):
+    query = delete(Stream).where(Stream.id == uuid)
+    result = db.session.execute(query)
+
+    if result.rowcount == 0:
+        return make_response("No such stream.", 404)
+
+    db.session.commit()
+    return {"ok": "deleted"}
 
 @blueprint.get("/<uuid:uuid>/token/")
 @requires_authorization(AuthorizationLevel.STREAMER)

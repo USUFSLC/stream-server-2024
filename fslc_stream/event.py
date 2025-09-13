@@ -1,6 +1,6 @@
 from uuid import UUID
-from flask import Blueprint, make_response, request
-from sqlalchemy import select
+from flask import Blueprint, current_app, make_response, request
+from sqlalchemy import delete, select
 
 from fslc_stream.auth import requires_authorization
 from fslc_stream.db.context import db
@@ -74,6 +74,17 @@ def get_event(uuid: UUID):
     if event is None:
         return make_response("No such event.", 404)
     return event.as_json(with_streams)
+
+@blueprint.delete("/<uuid:uuid>/")
+def delete_event(uuid: UUID):
+    query = delete(Event).where(Event.id == uuid)
+    result = db.session.execute(query)
+
+    if result.rowcount == 0:
+        return make_response("No such event.", 404)
+
+    db.session.commit()
+    return {"ok": "deleted"}
 
 
 @blueprint.get("/<uuid:uuid>/stream/")
