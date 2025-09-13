@@ -54,6 +54,7 @@ def get_stream(uuid: UUID):
 
 
 @blueprint.delete("/<uuid:uuid>/")
+@requires_authorization(AuthorizationLevel.ADMIN)
 def delete_stream(uuid: UUID):
     query = delete(Stream).where(Stream.id == uuid)
     result = db.session.execute(query)
@@ -66,6 +67,7 @@ def delete_stream(uuid: UUID):
 
 
 @blueprint.patch("/<uuid:uuid>/")
+@requires_authorization(AuthorizationLevel.ADMIN)
 def update_stream(uuid: UUID):
     data = request.json
     if not isinstance(data, dict):
@@ -86,7 +88,7 @@ def update_stream(uuid: UUID):
     if "event_id" in data:
         try:
             event_id = UUID(data["event_id"])
-        except ValueError as e:
+        except ValueError:
             return make_response("invalid uuid for event_id")
         stream.event_id = event_id
 

@@ -77,6 +77,7 @@ def get_event(uuid: UUID):
 
 
 @blueprint.delete("/<uuid:uuid>/")
+@requires_authorization(AuthorizationLevel.ADMIN)
 def delete_event(uuid: UUID):
     query = delete(Event).where(Event.id == uuid)
     result = db.session.execute(query)
@@ -89,6 +90,7 @@ def delete_event(uuid: UUID):
 
 
 @blueprint.patch("/<uuid:uuid>/")
+@requires_authorization(AuthorizationLevel.ADMIN)
 def patch_event(uuid: UUID):
     data = request.json
     if not isinstance(data, dict):
