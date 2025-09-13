@@ -12,7 +12,7 @@ from fslc_stream.utils import parse_datetime_permissive
 blueprint = Blueprint("event_api", __name__)
 
 
-@blueprint.post("/")
+@blueprint.post("")
 @requires_authorization(AuthorizationLevel.ADMIN)
 def new_event():
     data = request.json
@@ -32,7 +32,7 @@ def new_event():
     return event.as_json()
 
 
-@blueprint.get("/")
+@blueprint.get("")
 def get_events():
     with_streams = "with-streams" in request.args
     query = select(Event) \
@@ -65,7 +65,7 @@ def get_events():
     return events
 
 
-@blueprint.get("/<uuid:uuid>/")
+@blueprint.get("/<uuid:uuid>")
 def get_event(uuid: UUID):
     with_streams = "with-streams" in request.args
     query = select(Event).where(Event.id == uuid)
@@ -76,7 +76,7 @@ def get_event(uuid: UUID):
     return event.as_json(with_streams)
 
 
-@blueprint.delete("/<uuid:uuid>/")
+@blueprint.delete("/<uuid:uuid>")
 @requires_authorization(AuthorizationLevel.ADMIN)
 def delete_event(uuid: UUID):
     query = delete(Event).where(Event.id == uuid)
@@ -89,7 +89,7 @@ def delete_event(uuid: UUID):
     return {"ok": "deleted"}
 
 
-@blueprint.patch("/<uuid:uuid>/")
+@blueprint.patch("/<uuid:uuid>")
 @requires_authorization(AuthorizationLevel.ADMIN)
 def patch_event(uuid: UUID):
     data = request.json
@@ -113,7 +113,7 @@ def patch_event(uuid: UUID):
     return {"ok": "updated"}
 
 
-@blueprint.get("/<uuid:uuid>/stream/")
+@blueprint.get("/<uuid:uuid>/stream")
 def get_streams(uuid: UUID):
     query = select(Stream).where(Stream.event_id == uuid)
     stream = [s.as_json() for s in db.session.scalars(query)]
@@ -122,7 +122,7 @@ def get_streams(uuid: UUID):
     return stream
 
 
-@blueprint.post("/<uuid:uuid>/stream/")
+@blueprint.post("/<uuid:uuid>/stream")
 @requires_authorization(AuthorizationLevel.STREAMER)
 def add_stream(uuid: UUID):
     allow_callback_properties = "allow-callback-properties" in request.args

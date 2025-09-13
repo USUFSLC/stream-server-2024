@@ -11,7 +11,7 @@ blueprint = Blueprint("stream_api", __name__)
 
 
 # TODO: turn this or /api/event/uuid/stream into a redirect to the other
-@blueprint.post("/")
+@blueprint.post("")
 @requires_authorization(AuthorizationLevel.STREAMER)
 def new_stream():
     allow_callback_properties = "allow-callback-properties" in request.args
@@ -35,14 +35,14 @@ def new_stream():
     return make_response(stream.as_json())
 
 
-@blueprint.get("/live/")
+@blueprint.get("/live")
 def current_streams():
     query = select(Stream).where(and_(Stream.started_at != None, Stream.ended_at == None))
 
     return [s.as_json() | { "token": s.token } for s in db.session.scalars(query)]
 
 
-@blueprint.get("/<uuid:uuid>/")
+@blueprint.get("/<uuid:uuid>")
 def get_stream(uuid: UUID):
     with_event = "with-event" in request.args
     query = select(Stream).where(Stream.id == uuid)
@@ -53,7 +53,7 @@ def get_stream(uuid: UUID):
     return stream.as_json(with_event)
 
 
-@blueprint.delete("/<uuid:uuid>/")
+@blueprint.delete("/<uuid:uuid>")
 @requires_authorization(AuthorizationLevel.ADMIN)
 def delete_stream(uuid: UUID):
     query = delete(Stream).where(Stream.id == uuid)
@@ -66,7 +66,7 @@ def delete_stream(uuid: UUID):
     return {"ok": "deleted"}
 
 
-@blueprint.patch("/<uuid:uuid>/")
+@blueprint.patch("/<uuid:uuid>")
 @requires_authorization(AuthorizationLevel.ADMIN)
 def update_stream(uuid: UUID):
     data = request.json
@@ -95,7 +95,7 @@ def update_stream(uuid: UUID):
     db.session.commit()
     return {"ok": "updated"}
 
-@blueprint.get("/<uuid:uuid>/token/")
+@blueprint.get("/<uuid:uuid>/token")
 @requires_authorization(AuthorizationLevel.STREAMER)
 def get_stream_token(uuid: UUID):
     auth_level: AuthorizationLevel = g.auth_level
