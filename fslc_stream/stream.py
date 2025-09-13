@@ -41,6 +41,7 @@ def current_streams():
 
     return [s.as_json() | { "token": s.token } for s in db.session.scalars(query)]
 
+
 @blueprint.get("/<uuid:uuid>/")
 def get_stream(uuid: UUID):
     with_event = "with-event" in request.args
@@ -50,6 +51,7 @@ def get_stream(uuid: UUID):
     if stream is None:
         return make_response("No such stream.", 404)
     return stream.as_json(with_event)
+
 
 @blueprint.delete("/<uuid:uuid>/")
 def delete_stream(uuid: UUID):
@@ -61,6 +63,35 @@ def delete_stream(uuid: UUID):
 
     db.session.commit()
     return {"ok": "deleted"}
+
+
+@blueprint.patch("/<uuid:uuid>/")
+def update_stream(uuid: UUID):
+    data = request.json
+    if not isinstance(data, dict):
+        return make_response("need json object to update stream", 400)
+
+    query = select(Stream).where(Stream.id == uuid)
+    stream = db.session.scalar(query)
+
+    if stream is None:
+        return make_response("no such stream", 400)
+
+    if "presenter" in data:
+        stream.nonmember_presenter = data["presenter"]
+    if "title" in data:
+        stream.title = data["title"]
+    if "description" in data:
+        stream.description = data["description"]
+    if "event_id" in data:
+        try:
+            event_id = UUID(data["event_id"])
+        except ValueError as e:
+            return make_response("invalid uuid for event_id")
+        stream.event_id = event_id
+
+    db.session.commit()
+    return {"ok": "updated"}
 
 @blueprint.get("/<uuid:uuid>/token/")
 @requires_authorization(AuthorizationLevel.STREAMER)

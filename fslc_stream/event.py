@@ -75,6 +75,7 @@ def get_event(uuid: UUID):
         return make_response("No such event.", 404)
     return event.as_json(with_streams)
 
+
 @blueprint.delete("/<uuid:uuid>/")
 def delete_event(uuid: UUID):
     query = delete(Event).where(Event.id == uuid)
@@ -85,6 +86,29 @@ def delete_event(uuid: UUID):
 
     db.session.commit()
     return {"ok": "deleted"}
+
+
+@blueprint.patch("/<uuid:uuid>/")
+def patch_event(uuid: UUID):
+    data = request.json
+    if not isinstance(data, dict):
+        return make_response("need json object to update event", 400)
+
+    query = select(Event).where(Event.id == uuid)
+    event = db.session.scalar(query)
+
+    if event is None:
+        return make_response("no such event", 400)
+
+    if "location" in data:
+        event.location = data["location"]
+    if "title" in data:
+        event.title = data["title"]
+    if "description" in data:
+        event.description = data["description"]
+
+    db.session.commit()
+    return {"ok": "updated"}
 
 
 @blueprint.get("/<uuid:uuid>/stream/")
