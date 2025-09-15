@@ -108,6 +108,16 @@ def patch_event(uuid: UUID):
         event.title = data["title"]
     if "description" in data:
         event.description = data["description"]
+    if "start" in data:
+        try:
+            event.starts_at = parse_datetime_permissive(data["start"])
+        except ValueError:
+            return make_response("invalid start time", 400)
+    if "end" in data:
+        try:
+            event.ends_at = parse_datetime_permissive(data["end"])
+        except ValueError:
+            return make_response("invalid end time", 400)
 
     db.session.commit()
     return {"ok": "updated"}
