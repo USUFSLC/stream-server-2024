@@ -17,7 +17,7 @@ def create_app():
         app.config["SQLALCHEMY_DATABASE_URI"] = environ["SQLALCHEMY_DATABASE_URI"]
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = \
-            f"postgresql://{environ.get('POSTGRES_USER', 'postgres')}:{environ['POSTGRES_PASSWORD']}@postgres:5432"
+            f"postgresql://{environ.get('POSTGRES_USER', 'postgres')}:{environ['POSTGRES_PASSWORD']}@{environ.get('POSTGRES_HOST', 'postgres')}:5432"
 
     db.init_app(app)
     migrate.init_app(app, db)
