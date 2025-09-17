@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, List, Optional
 from uuid import UUID
 from secrets import token_hex
-from sqlalchemy import ForeignKey, String, text
+import sqlalchemy as sa
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from fslc_stream.utils import parse_datetime_permissive
@@ -21,13 +21,13 @@ class Event(Base):
 
     id: Mapped[UUID] = mapped_column(
         primary_key=True,
-        server_default=text("gen_random_uuid()")
+        server_default=sa.text("gen_random_uuid()")
     )
-    created_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
+    created_at: Mapped[datetime] = mapped_column(server_default=sa.text("now()"))
     starts_at: Mapped[datetime]
     ends_at: Mapped[datetime]
-    location: Mapped[Optional[str]] = mapped_column(String(64))
-    title: Mapped[str] = mapped_column(String(128))
+    location: Mapped[Optional[str]] = mapped_column(sa.String(64))
+    title: Mapped[str] = mapped_column(sa.String(128))
     description: Mapped[Optional[str]]
 
     streams: Mapped[List["Stream"]] = relationship(back_populates="event", passive_deletes=True)
@@ -84,19 +84,19 @@ class Stream(Base):
 
     id: Mapped[UUID] = mapped_column(
         primary_key=True,
-        server_default=text("gen_random_uuid()")
+        server_default=sa.text("gen_random_uuid()")
     )
-    created_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
+    created_at: Mapped[datetime] = mapped_column(server_default=sa.text("now()"))
     started_at: Mapped[Optional[datetime]]
     ended_at: Mapped[Optional[datetime]]
     processed_at: Mapped[Optional[datetime]]
     title: Mapped[str]
     presenter: Mapped[Optional[UUID]]
-    nonmember_presenter: Mapped[Optional[str]] = mapped_column(String(20))
+    nonmember_presenter: Mapped[Optional[str]] = mapped_column(sa.String(20))
     description: Mapped[Optional[str]]
     token: Mapped[str] = mapped_column(default=lambda: token_hex(16))
 
-    event_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("event.id", ondelete="SET NULL"))
+    event_id: Mapped[Optional[UUID]] = mapped_column(sa.ForeignKey("event.id", ondelete="SET NULL"))
     event: Mapped["Event"] = relationship(back_populates="streams", passive_deletes=True)
 
     def as_json(self, with_event=False) -> dict[str, Any]:
