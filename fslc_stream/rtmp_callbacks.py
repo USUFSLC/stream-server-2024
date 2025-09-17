@@ -45,10 +45,10 @@ def rtmp_start():
     if stream is None:
         return make_response("Invalid key.", 400)
 
-    if stream.started_at is not None:
+    if stream.start_time is not None:
         return make_response("Stream already started.", 409)
 
-    stream.started_at = datetime.now()
+    stream.start_time = datetime.now()
 
     db.session.add(stream)
     db.session.commit()
@@ -62,10 +62,10 @@ def rtmp_update():
     if stream is None:
         return make_response("Invalid key.", 400)
 
-    if stream.started_at is None:
+    if stream.start_time is None:
         return make_response("Stream has not started.", 409)
 
-    if stream.ended_at is None:
+    if stream.end_time is None:
         return make_response("Keep going!", 200)
     return make_response("Stream ended.", 409)
 
@@ -78,10 +78,10 @@ def rtmp_end():
     if stream is None:
         return make_response("Invalid key.", 400)
 
-    if stream.ended_at is not None:
+    if stream.end_time is not None:
         return make_response("Stream already ended", 409)
 
-    stream.ended_at = datetime.now()
+    stream.end_time = datetime.now()
     db.session.add(stream)
 
     with stream_end_lock:
@@ -96,10 +96,10 @@ def rtmp_done():
     if stream is None:
         return make_response("Invalid key.", 400)
 
-    if stream.processed_at is not None:
+    if stream.process_time is not None:
         return make_response("Stream already processed", 409)
 
-    stream.processed_at = datetime.now()
+    stream.process_time = datetime.now()
     db.session.add(stream)
 
     with stream_end_lock:

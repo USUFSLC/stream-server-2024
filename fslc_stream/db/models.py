@@ -23,9 +23,9 @@ class Event(Base):
         primary_key=True,
         server_default=sa.text("gen_random_uuid()")
     )
-    created_at: Mapped[datetime] = mapped_column(server_default=sa.text("now()"))
-    starts_at: Mapped[datetime]
-    ends_at: Mapped[datetime]
+    create_time: Mapped[datetime] = mapped_column(server_default=sa.text("now()"))
+    start_time: Mapped[datetime]
+    end_time: Mapped[datetime]
     location: Mapped[Optional[str]] = mapped_column(sa.String(64))
     title: Mapped[str] = mapped_column(sa.String(128))
     description: Mapped[Optional[str]]
@@ -35,9 +35,9 @@ class Event(Base):
     def as_json(self, with_streams=False) -> dict[str, Any]:
         result = {
             "id": str(self.id),
-            "created_at": self.created_at.timestamp(),
-            "starts_at": self.starts_at.timestamp(),
-            "ends_at": self.ends_at.timestamp(),
+            "create_time": self.create_time.timestamp(),
+            "start_time": self.start_time.timestamp(),
+            "end_time": self.end_time.timestamp(),
             "location": self.location,
             "title": self.title,
             "description": self.description,
@@ -72,8 +72,8 @@ class Event(Base):
             end_dt = start_dt
 
         return Event(
-            starts_at=start_dt,
-            ends_at=end_dt,
+            start_time=start_dt,
+            end_time=end_dt,
             location=data.get("location", None),
             title=title,
             description=data.get("description", None),
@@ -86,15 +86,15 @@ class Stream(Base):
         primary_key=True,
         server_default=sa.text("gen_random_uuid()")
     )
-    created_at: Mapped[datetime] = mapped_column(server_default=sa.text("now()"))
-    started_at: Mapped[Optional[datetime]]
-    ended_at: Mapped[Optional[datetime]]
-    processed_at: Mapped[Optional[datetime]]
-    title: Mapped[str]
+    create_time: Mapped[datetime] = mapped_column(server_default=sa.text("now()"))
+    start_time: Mapped[Optional[datetime]]
+    end_time: Mapped[Optional[datetime]]
+    process_time: Mapped[Optional[datetime]]
+    title: Mapped[str] = mapped_column(sa.String(128))
     presenter: Mapped[Optional[UUID]]
     nonmember_presenter: Mapped[Optional[str]] = mapped_column(sa.String(20))
     description: Mapped[Optional[str]]
-    token: Mapped[str] = mapped_column(default=lambda: token_hex(16))
+    token: Mapped[str] = mapped_column(sa.String(32), default=lambda: token_hex(16))
 
     event_id: Mapped[Optional[UUID]] = mapped_column(sa.ForeignKey("event.id", ondelete="SET NULL"))
     event: Mapped["Event"] = relationship(back_populates="streams", passive_deletes=True)
@@ -102,10 +102,10 @@ class Stream(Base):
     def as_json(self, with_event=False) -> dict[str, Any]:
         result = {
             "id": str(self.id),
-            "created_at": self.created_at.timestamp(),
-            "started_at": None if self.started_at is None else self.started_at.timestamp(),
-            "ended_at": None if self.ended_at is None else self.ended_at.timestamp(),
-            "processed_at": None if self.processed_at is None else self.processed_at.timestamp(),
+            "create_time": self.create_time.timestamp(),
+            "start_time": None if self.start_time is None else self.start_time.timestamp(),
+            "end_time": None if self.end_time is None else self.end_time.timestamp(),
+            "process_time": None if self.process_time is None else self.process_time.timestamp(),
             "title": self.title,
             "presenter": self.presenter if self.presenter is not None else self.nonmember_presenter,
             "description": self.description,
@@ -150,11 +150,11 @@ class Stream(Base):
         )
 
         if allow_callback_properties:
-            if "started_at" in data:
-                result.started_at = parse_datetime_permissive(data["started_at"])
-            if "ended_at" in data:
-                result.ended_at = parse_datetime_permissive(data["ended_at"])
-            if "processed_at" in data:
-                result.processed_at = parse_datetime_permissive(data["processed_at"])
+            if "start_time" in data:
+                result.start_time = parse_datetime_permissive(data["start_time"])
+            if "end_time" in data:
+                result.end_time = parse_datetime_permissive(data["end_time"])
+            if "process_time" in data:
+                result.process_time = parse_datetime_permissive(data["process_time"])
 
         return result

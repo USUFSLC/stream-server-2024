@@ -36,7 +36,7 @@ def new_event():
 def get_events():
     with_streams = "with-streams" in request.args
     query = select(Event) \
-        .order_by(Event.starts_at)
+        .order_by(Event.start_time)
 
     if "from" in request.args:
         from_time = request.args["from"]
@@ -46,7 +46,7 @@ def get_events():
             pass
         from_dt = parse_datetime_permissive(from_time)
 
-        query = query.where(Event.starts_at >= from_dt)
+        query = query.where(Event.start_time >= from_dt)
 
     if "to" in request.args:
         to_time = request.args["to"]
@@ -56,7 +56,7 @@ def get_events():
             pass
         to_dt = parse_datetime_permissive(to_time)
 
-        query = query.where(Event.starts_at <= to_dt)
+        query = query.where(Event.start_time <= to_dt)
 
     events = [e.as_json(with_streams) for e in db.session.scalars(query)]
 
@@ -110,12 +110,12 @@ def patch_event(uuid: UUID):
         event.description = data["description"]
     if "start" in data:
         try:
-            event.starts_at = parse_datetime_permissive(data["start"])
+            event.start_time = parse_datetime_permissive(data["start"])
         except ValueError:
             return make_response("invalid start time", 400)
     if "end" in data:
         try:
-            event.ends_at = parse_datetime_permissive(data["end"])
+            event.end_time = parse_datetime_permissive(data["end"])
         except ValueError:
             return make_response("invalid end time", 400)
 

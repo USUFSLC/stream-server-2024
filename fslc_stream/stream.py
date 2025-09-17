@@ -37,7 +37,7 @@ def new_stream():
 
 @blueprint.get("/live")
 def current_streams():
-    query = select(Stream).where(and_(Stream.started_at != None, Stream.ended_at == None))
+    query = select(Stream).where(and_(Stream.start_time != None, Stream.end_time == None))
 
     return [s.as_json() | { "token": s.token } for s in db.session.scalars(query)]
 
@@ -110,7 +110,7 @@ def get_stream_token(uuid: UUID):
     if auth_level == AuthorizationLevel.STREAMER and stream.presenter != user_id:
         return make_response("You are not a presenter for this stream.", 403)
 
-    if stream.started_at is not None:
+    if stream.start_time is not None:
         return make_response("This stream has already been started.", 409)
 
     if stream.token is None:
