@@ -74,7 +74,7 @@ def update_stream(uuid: UUID):
         return make_response("need json object to update stream", 400)
 
     query = select(Stream).where(Stream.id == uuid)
-    stream = db.session.scalar(query)
+    stream: Stream = db.session.scalar(query)
 
     if stream is None:
         return make_response("no such stream", 400)
@@ -93,7 +93,7 @@ def update_stream(uuid: UUID):
         stream.event_id = event_id
 
     db.session.commit()
-    return {"ok": "updated"}
+    return stream.as_json(with_event=True)
 
 @blueprint.get("/<uuid:uuid>/token")
 @requires_authorization(AuthorizationLevel.STREAMER)

@@ -55,7 +55,7 @@ class Event(Base):
 
         title = data["title"]
 
-        if "start" not in data:
+        if "start_time" not in data:
             raise SerializationError("No start time specified.")
 
         try:
@@ -63,7 +63,7 @@ class Event(Base):
         except ValueError:
             raise SerializationError("Failed to parse start time")
 
-        if "end" in data:
+        if "end_time" in data:
             try:
                 end_dt = parse_datetime_permissive(data["end"])
             except ValueError:

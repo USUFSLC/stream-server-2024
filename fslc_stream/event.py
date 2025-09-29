@@ -97,7 +97,7 @@ def patch_event(uuid: UUID):
         return make_response("need json object to update event", 400)
 
     query = select(Event).where(Event.id == uuid)
-    event = db.session.scalar(query)
+    event: Event = db.session.scalar(query)
 
     if event is None:
         return make_response("no such event", 400)
@@ -108,19 +108,19 @@ def patch_event(uuid: UUID):
         event.title = data["title"]
     if "description" in data:
         event.description = data["description"]
-    if "start" in data:
+    if "start_time" in data:
         try:
-            event.start_time = parse_datetime_permissive(data["start"])
+            event.start_time = parse_datetime_permissive(data["start_time"])
         except ValueError:
             return make_response("invalid start time", 400)
-    if "end" in data:
+    if "end_time" in data:
         try:
-            event.end_time = parse_datetime_permissive(data["end"])
+            event.end_time = parse_datetime_permissive(data["end_time"])
         except ValueError:
             return make_response("invalid end time", 400)
 
     db.session.commit()
-    return {"ok": "updated"}
+    return event.as_json(with_streams=True)
 
 
 @blueprint.get("/<uuid:uuid>/stream")
