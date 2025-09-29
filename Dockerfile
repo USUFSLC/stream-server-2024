@@ -6,6 +6,7 @@ RUN pip install -r /tmp/requirements.txt
 WORKDIR /fslc_stream
 
 COPY ./fslc_stream/ ./fslc_stream
+COPY ./migrations/ ./migrations
 
 EXPOSE 5000
 
