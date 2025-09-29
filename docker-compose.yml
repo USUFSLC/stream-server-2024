@@ -20,6 +20,8 @@ services:
       restart: "always" 
       build:
          dockerfile: ./Dockerfile
+      environment:
+         AUTOMIGRATE: 1
       env_file:
          - .postgres.env
          - .flask.env
@@ -27,7 +29,6 @@ services:
          - "5000:5000"
       volumes:
          - "./gunicorn.conf.py:/etc/gunicorn.conf.py"
-         - "./migrations:/fslc-stream/migrations"
       depends_on: postgres
    postgres:
       restart: "always"

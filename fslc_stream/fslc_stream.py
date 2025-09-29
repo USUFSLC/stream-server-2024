@@ -1,5 +1,6 @@
 import logging
 from os import environ
+import flask_migrate
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 
@@ -22,8 +23,8 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
-    with app.app_context():
-        db.create_all()
+    if "AUTOMIGRATE" in environ:
+        flask_migrate.upgrade()
 
     if __name__ != '__main__':
         gunicorn_logger = logging.getLogger('gunicorn.error')
