@@ -60,13 +60,13 @@ class Event(Base):
             raise SerializationError("No start time specified.")
 
         try:
-            start_dt = parse_datetime_permissive(data["start"])
+            start_dt = parse_datetime_permissive(data["start_time"])
         except ValueError:
             raise SerializationError("Failed to parse start time")
 
         if "end_time" in data:
             try:
-                end_dt = parse_datetime_permissive(data["end"])
+                end_dt = parse_datetime_permissive(data["end_time"])
             except ValueError:
                 raise SerializationError("Failed to parse start time")
         else:

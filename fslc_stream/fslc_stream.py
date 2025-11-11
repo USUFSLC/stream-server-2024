@@ -24,7 +24,8 @@ def create_app():
     migrate.init_app(app, db)
 
     if "AUTOMIGRATE" in environ:
-        flask_migrate.upgrade()
+        with app.app_context():
+            flask_migrate.upgrade()
 
     if __name__ != '__main__':
         gunicorn_logger = logging.getLogger('gunicorn.error')

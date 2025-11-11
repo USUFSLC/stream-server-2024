@@ -15,7 +15,8 @@ services:
          - "./nginx/nginx.conf:/etc/nginx/nginx.conf.template"
          - "./nginx/scripts:/scripts"
          - "./media:/var/stream:rw"
-      depends_on: fslc-stream
+      depends_on:
+         - fslc-stream
    fslc-stream:
       restart: "always" 
       build:
@@ -29,11 +30,15 @@ services:
          - "5000:5000"
       volumes:
          - "./gunicorn.conf.py:/etc/gunicorn.conf.py"
-      depends_on: postgres
+         - "./migrations:/fslc-stream/migrations"
+      depends_on:
+         - postgres
    postgres:
       restart: "always"
       image: "docker.io/postgres:17-alpine"
       env_file: .postgres.env
+      ports:
+        - '5432:5432'
       volumes:
          - "postgres-data:/var/lib/postgresql/data"
 
