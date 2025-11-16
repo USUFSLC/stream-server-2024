@@ -1,5 +1,6 @@
 from uuid import UUID
 from flask import Blueprint, current_app, make_response, request
+import icalendar
 from sqlalchemy import delete, select
 
 from fslc_stream.auth import requires_authorization
@@ -35,6 +36,12 @@ def new_event():
 @blueprint.get("")
 def get_events():
     with_streams = "with-streams" in request.args
+
+    format = request.args.get("format", "json")
+
+    if format not in ("json", "ics"):
+        return make_response("invalid output format", 400)
+
     query = select(Event) \
         .order_by(Event.start_time)
 
@@ -58,22 +65,52 @@ def get_events():
 
         query = query.where(Event.start_time <= to_dt)
 
-    events = [e.as_json(with_streams) for e in db.session.scalars(query)]
+    events = [e for e in db.session.scalars(query)]
 
     if len(events) == 0:
         return make_response("No events in time frame.", 404)
-    return events
+
+    if format == "json":
+        return [e.as_json(with_streams) for e in events]
+    elif format == "ics":
+        result = icalendar.Calendar()
+        result.add("x-wr-calname", "USU FSLC Events")
+        for e in events:
+            result.add_component(e.as_ics())
+
+        response = make_response(result.to_ical())
+        response.headers["content-type"] = "text/calendar"
+        return response
+    else:
+        return make_response("Somehow I didn't realize this was an illegal format before. Go back.", 400)
 
 
 @blueprint.get("/<uuid:uuid>")
 def get_event(uuid: UUID):
     with_streams = "with-streams" in request.args
+
+    format = request.args.get("format", "json")
+
+    if format not in ("json", "ics"):
+        return make_response("invalid output format", 400)
+
     query = select(Event).where(Event.id == uuid)
     event = db.session.scalar(query)
 
     if event is None:
         return make_response("No such event.", 404)
-    return event.as_json(with_streams)
+
+    if format == "json":
+        return event.as_json(with_streams)
+    elif format == "ics":
+        result = icalendar.Calendar()
+        result.add_component(event.as_ics())
+
+        response = make_response(result.to_ical())
+        response.headers["content-type"] = "text/calendar"
+        return response
+    else:
+        return make_response("Somehow I didn't realize this was an illegal format before. Go back.", 400)
 
 
 @blueprint.delete("/<uuid:uuid>")
@@ -97,7 +134,7 @@ def patch_event(uuid: UUID):
         return make_response("need json object to update event", 400)
 
     query = select(Event).where(Event.id == uuid)
-    event: Event = db.session.scalar(query)
+    event: Event | None = db.session.scalar(query)
 
     if event is None:
         return make_response("no such event", 400)

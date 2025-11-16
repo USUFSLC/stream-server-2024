@@ -1,4 +1,5 @@
-from datetime import datetime
+import icalendar
+from datetime import datetime, timezone
 from typing import Any, List, Optional
 from uuid import UUID
 from secrets import token_hex
@@ -78,6 +79,24 @@ class Event(Base):
             title=title,
             description=data.get("description", None),
         )
+
+    def long_description(self):
+        result = f"<https://linux.usu.edu/event/{self.id}>\n\n{self.description}\n\n----------"
+        for s in self.streams:
+            result += f"\n\n* Stream: {s.title} <https://linux.usu.edu/stream/{s.id}>"
+            if s.description:
+                result += f"\n{s.description}"
+
+        return result
+
+    def as_ics(self) -> icalendar.Event:
+        result = icalendar.Event()
+        result.add("dtstart", self.start_time.replace(tzinfo=timezone.utc))
+        result.add("dtend", self.end_time.replace(tzinfo=timezone.utc))
+        result.add("summary", self.title)
+        result.add("url", f"https://linux.usu.edu/event/{self.id}")
+        result.add("description", self.long_description())
+        return result
 
 class Stream(Base):
     __tablename__ = "stream"
