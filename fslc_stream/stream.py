@@ -1,10 +1,12 @@
+from os import remove
 from uuid import UUID
-from flask import Blueprint, g, request, make_response
+from flask import Blueprint, current_app, g, request, make_response
 from sqlalchemy import Result, and_, delete, select
-from fslc_stream.auth import requires_authorization
+from fslc_stream.auth import can_control_stream, requires_authorization
 from fslc_stream.db.context import db
-from fslc_stream.db.models import SerializationError, Stream
+from fslc_stream.db.models import Resource, SerializationError, Stream
 from fslc_stream.types import AuthorizationLevel
+from fslc_stream.upload_utils import ResourceUploadError, save_resource
 
 
 blueprint = Blueprint("stream_api", __name__)
@@ -117,3 +119,57 @@ def get_stream_token(uuid: UUID):
         return make_response("This stream has no token.", 404)
 
     return {"token": str(uuid) + "." + stream.token}
+
+
+@blueprint.post("/<uuid:sid>/resource")
+@requires_authorization(required_level=AuthorizationLevel.USER)
+def upload_resource(sid: UUID):
+    query = select(Stream).where(Stream.id == sid)
+    stream = db.session.scalar(query)
+
+    if stream is None:
+        return make_response("No such event.", 400)
+
+    current_app.logger.error(request.files)
+    if len(request.files) != 1:
+        return make_response("Please upload exactly one file.", 400)
+
+    if not can_control_stream(stream):
+        pass
+
+    storage = next(iter(request.files.values()))
+
+    try:
+        res = save_resource(storage)
+    except ResourceUploadError as e:
+        return make_response(e.message, 400)
+
+    res.stream_id = sid
+
+    db.session.add(res)
+    db.session.commit()
+
+    return make_response(res.as_json())
+
+
+@blueprint.delete("/<uuid:sid>/resource/<uuid:rid>")
+@requires_authorization(required_level=AuthorizationLevel.USER)
+def delete_resource(sid: UUID, rid: UUID):
+    query = select(Resource).where(Resource.id == rid)
+    res = db.session.scalar(query)
+    if res is None:
+        return make_response("No such resource.", 400)
+
+    if res.stream_id != sid:
+        return make_response("Event is incorrect.", 400)
+
+    dir = f"/var/stream/resources/{rid}"
+    path = f"{dir}/{res.filename}"
+
+    remove(path)
+    remove(dir)
+
+    db.session.delete(res)
+    db.session.commit()
+
+    return {"ok": "deleted"}

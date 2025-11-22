@@ -1,12 +1,16 @@
-from uuid import UUID
+from os import makedirs, remove
+from uuid import UUID, uuid4
+import hashlib
 from flask import Blueprint, current_app, make_response, request
 import icalendar
 from sqlalchemy import delete, select
+from werkzeug.utils import secure_filename
 
 from fslc_stream.auth import requires_authorization
 from fslc_stream.db.context import db
-from fslc_stream.db.models import Event, SerializationError, Stream
+from fslc_stream.db.models import Event, Resource, SerializationError, Stream
 from fslc_stream.types import AuthorizationLevel
+from fslc_stream.upload_utils import ResourceUploadError, save_resource
 from fslc_stream.utils import parse_datetime_permissive
 
 
@@ -36,6 +40,7 @@ def new_event():
 @blueprint.get("")
 def get_events():
     with_streams = "with-streams" in request.args
+    with_resources = "with-resources" in request.args
 
     format = request.args.get("format", "json")
 
@@ -71,7 +76,7 @@ def get_events():
         return make_response("No events in time frame.", 404)
 
     if format == "json":
-        return [e.as_json(with_streams) for e in events]
+        return [e.as_json(with_streams, with_resources) for e in events]
     elif format == "ics":
         result = icalendar.Calendar()
         result.add("x-wr-calname", "USU FSLC Events")
@@ -88,6 +93,7 @@ def get_events():
 @blueprint.get("/<uuid:uuid>")
 def get_event(uuid: UUID):
     with_streams = "with-streams" in request.args
+    with_resources = "with-resources" in request.args
 
     format = request.args.get("format", "json")
 
@@ -101,7 +107,7 @@ def get_event(uuid: UUID):
         return make_response("No such event.", 404)
 
     if format == "json":
-        return event.as_json(with_streams)
+        return event.as_json(with_streams, with_resources)
     elif format == "ics":
         result = icalendar.Calendar()
         result.add_component(event.as_ics())
@@ -189,3 +195,60 @@ def add_stream(uuid: UUID):
     db.session.commit()
 
     return make_response(stream.as_json())
+
+
+@blueprint.get("/<uuid:uuid>/resource")
+def list_resources(uuid: UUID):
+    query = select(Resource).where(Resource.event_id == uuid)
+    scalars = db.session.scalars(query)
+
+    return make_response([r.as_json() for r in scalars])
+
+
+@blueprint.post("/<uuid:eid>/resource")
+@requires_authorization(required_level=AuthorizationLevel.ADMIN)
+def upload_resource(eid: UUID):
+    query = select(Event).where(Event.id == eid)
+    if db.session.scalar(query) is None:
+        return make_response("No such event.", 400)
+
+    current_app.logger.error(request.files)
+    if len(request.files) != 1:
+        return make_response("Please upload exactly one file.", 400)
+
+    storage = next(iter(request.files.values()))
+
+    try:
+        res = save_resource(storage)
+    except ResourceUploadError as e:
+        return make_response(e.message, 400)
+
+    res.event_id = eid
+
+    db.session.add(res)
+    db.session.commit()
+
+    return make_response(res.as_json())
+
+
+@blueprint.delete("/<uuid:eid>/resource/<uuid:rid>")
+@requires_authorization(required_level=AuthorizationLevel.ADMIN)
+def delete_resource(eid: UUID, rid: UUID):
+    query = select(Resource).where(Resource.id == rid)
+    res = db.session.scalar(query)
+    if res is None:
+        return make_response("No such resource.", 400)
+
+    if res.event_id != eid:
+        return make_response("Event is incorrect.", 400)
+
+    dir = f"/var/stream/resources/{rid}"
+    path = f"{dir}/{res.filename}"
+
+    remove(path)
+    remove(dir)
+
+    db.session.delete(res)
+    db.session.commit()
+
+    return {"ok": "deleted"}

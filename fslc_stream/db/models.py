@@ -33,7 +33,9 @@ class Event(Base):
 
     streams: Mapped[List["Stream"]] = relationship(back_populates="event", passive_deletes=True)
 
-    def as_json(self, with_streams=False) -> dict[str, Any]:
+    resources: Mapped[List["Resource"]] = relationship(back_populates="event", passive_deletes=True)
+
+    def as_json(self, with_streams=False, with_resources=False) -> dict[str, Any]:
         result = {
             "id": str(self.id),
             "create_time": self.create_time.timestamp(),
@@ -46,6 +48,9 @@ class Event(Base):
 
         if with_streams:
             result["streams"] = [s.as_json() for s in self.streams]
+
+        if with_resources:
+            result["resources"] = [r.as_json() for r in self.resources]
 
         return result
 
@@ -118,6 +123,8 @@ class Stream(Base):
     event_id: Mapped[Optional[UUID]] = mapped_column(sa.ForeignKey("event.id", ondelete="SET NULL"))
     event: Mapped["Event"] = relationship(back_populates="streams", passive_deletes=True)
 
+    resources: Mapped[List["Resource"]] = relationship(back_populates="stream", passive_deletes=True)
+
     def as_json(self, with_event=False) -> dict[str, Any]:
         result = {
             "id": str(self.id),
@@ -175,5 +182,36 @@ class Stream(Base):
                 result.end_time = parse_datetime_permissive(data["end_time"])
             if "process_time" in data:
                 result.process_time = parse_datetime_permissive(data["process_time"])
+
+        return result
+
+class Resource(Base):
+    __tablename__ = "resource"
+
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True,
+        server_default=sa.text("gen_random_uuid()")
+    )
+    create_time: Mapped[datetime] = mapped_column(server_default=sa.text("now()"))
+    filename: Mapped[str] = mapped_column(sa.String(32))
+    filesize: Mapped[int]
+    content_hash: Mapped[bytes]
+
+    event_id: Mapped[Optional[UUID]] = mapped_column(sa.ForeignKey("event.id"))
+    event: Mapped[Optional["Event"]] = relationship(back_populates="resources", passive_deletes=True)
+
+    stream_id: Mapped[Optional[UUID]] = mapped_column(sa.ForeignKey("stream.id"))
+    stream: Mapped[Optional["Stream"]] = relationship(back_populates="resources", passive_deletes=True)
+
+    def as_json(self) -> dict[str, Any]:
+        result = {
+            "id": str(self.id),
+            "create_time": self.create_time.timestamp(),
+            "filename": self.filename,
+            "filesize": self.filesize,
+            "content_hash": self.content_hash.hex(),
+            "stream_id": self.stream_id,
+            "event_id": self.event_id
+        }
 
         return result
