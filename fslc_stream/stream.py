@@ -135,7 +135,7 @@ def upload_resource(sid: UUID):
         return make_response("Please upload exactly one file.", 400)
 
     if not can_control_stream(stream):
-        pass
+        return make_response("You are not authorized to modify this stream.", 401)
 
     storage = next(iter(request.files.values()))
 
@@ -160,8 +160,12 @@ def delete_resource(sid: UUID, rid: UUID):
     if res is None:
         return make_response("No such resource.", 400)
 
-    if res.stream_id != sid:
+    stream = res.stream
+    if stream is None or stream.id != sid:
         return make_response("Event is incorrect.", 400)
+
+    if not can_control_stream(stream):
+        return make_response("You are not authorized to modify this stream.", 401)
 
     dir = f"/var/stream/resources/{rid}"
     path = f"{dir}/{res.filename}"
