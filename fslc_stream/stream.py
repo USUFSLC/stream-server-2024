@@ -1,4 +1,4 @@
-from os import remove
+from os import remove, rmdir
 from uuid import UUID
 from flask import Blueprint, current_app, g, request, make_response
 from sqlalchemy import Result, and_, delete, select
@@ -130,7 +130,6 @@ def upload_resource(sid: UUID):
     if stream is None:
         return make_response("No such event.", 400)
 
-    current_app.logger.error(request.files)
     if len(request.files) != 1:
         return make_response("Please upload exactly one file.", 400)
 
@@ -171,7 +170,7 @@ def delete_resource(sid: UUID, rid: UUID):
     path = f"{dir}/{res.filename}"
 
     remove(path)
-    remove(dir)
+    rmdir(dir)
 
     db.session.delete(res)
     db.session.commit()

@@ -1,4 +1,4 @@
-from os import makedirs, remove
+from os import makedirs, remove, rmdir
 from uuid import UUID, uuid4
 import hashlib
 from flask import Blueprint, current_app, make_response, request
@@ -163,7 +163,7 @@ def patch_event(uuid: UUID):
             return make_response("invalid end time", 400)
 
     db.session.commit()
-    return event.as_json(with_streams=True)
+    return event.as_json(with_streams=True, with_resources=True)
 
 
 @blueprint.get("/<uuid:uuid>/stream")
@@ -246,7 +246,7 @@ def delete_resource(eid: UUID, rid: UUID):
     path = f"{dir}/{res.filename}"
 
     remove(path)
-    remove(dir)
+    rmdir(dir)
 
     db.session.delete(res)
     db.session.commit()
