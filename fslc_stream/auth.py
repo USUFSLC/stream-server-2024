@@ -1,11 +1,13 @@
 from functools import wraps
 import typing
 from os import environ
-from flask import g, request, make_response
+from uuid import UUID
+from flask import current_app, g, request, make_response
 import jwt
 from jwt import PyJWKClient
 import requests
 
+from fslc_stream.db.models import Stream
 from fslc_stream.types import AuthorizationLevel
 
 OIDC_CLIENT_ID = environ["OIDC_CLIENT_ID"]
@@ -46,6 +48,7 @@ def requires_authorization(required_level: AuthorizationLevel = AuthorizationLev
                 return make_response("JWT is expired.", 401)
 
             g.payload = payload
+            g.subject = g.payload["sub"]
 
             auth_level = get_auth_level(payload["roles"])
 
@@ -68,3 +71,6 @@ def teardown_payload(_):
         g.pop("payload")
     if "auth_level" in g:
         g.pop("auth_level")
+
+def can_control_stream(stream: Stream):
+    return g.auth_level == AuthorizationLevel.ADMIN or stream.presenter == g.subject

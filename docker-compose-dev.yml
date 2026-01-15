@@ -29,6 +29,7 @@ services:
          - "./gunicorn.conf.py:/etc/gunicorn.conf.py"
          - "./migrations:/fslc_stream/migrations"
          - "./fslc_stream/:/fslc_stream/fslc_stream"
+         - "./media:/var/stream:rw"
       depends_on: postgres
    postgres:
       restart: "always"

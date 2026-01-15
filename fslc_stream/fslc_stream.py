@@ -14,6 +14,8 @@ def create_app():
     from fslc_stream.api import blueprint as api_blueprint
     app = StreamServerFlask(__name__)
 
+    app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
+
     if "SQLALCHEMY_DATABASE_URI" in environ:
         app.config["SQLALCHEMY_DATABASE_URI"] = environ["SQLALCHEMY_DATABASE_URI"]
     else:
