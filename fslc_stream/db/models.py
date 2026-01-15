@@ -125,7 +125,7 @@ class Stream(Base):
 
     resources: Mapped[List["Resource"]] = relationship(back_populates="stream", passive_deletes=True)
 
-    def as_json(self, with_event=False) -> dict[str, Any]:
+    def as_json(self, with_event=False, with_resources=False) -> dict[str, Any]:
         result = {
             "id": str(self.id),
             "create_time": self.create_time.timestamp(),
@@ -141,6 +141,9 @@ class Stream(Base):
             result["event"] = self.event.as_json()
         else:
             result["event_id"] = self.event_id
+
+        if with_resources:
+            result["resources"] = [r.as_json() for r in self.resources]
 
         return result
 

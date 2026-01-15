@@ -47,12 +47,13 @@ def current_streams():
 @blueprint.get("/<uuid:uuid>")
 def get_stream(uuid: UUID):
     with_event = "with-event" in request.args
+    with_resources = "with-resources" in request.args
     query = select(Stream).where(Stream.id == uuid)
     stream = db.session.scalar(query)
 
     if stream is None:
         return make_response("No such stream.", 404)
-    return stream.as_json(with_event)
+    return stream.as_json(with_event, with_resources)
 
 
 @blueprint.delete("/<uuid:uuid>")
@@ -119,6 +120,14 @@ def get_stream_token(uuid: UUID):
         return make_response("This stream has no token.", 404)
 
     return {"token": str(uuid) + "." + stream.token}
+
+
+@blueprint.get("/<uuid:uuid>/resource")
+def list_resources(uuid: UUID):
+    query = select(Resource).where(Resource.stream_id == uuid)
+    scalars = db.session.scalars(query)
+
+    return make_response([r.as_json() for r in scalars])
 
 
 @blueprint.post("/<uuid:sid>/resource")

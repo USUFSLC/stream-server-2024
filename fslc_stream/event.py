@@ -212,7 +212,6 @@ def upload_resource(eid: UUID):
     if db.session.scalar(query) is None:
         return make_response("No such event.", 400)
 
-    current_app.logger.error(request.files)
     if len(request.files) != 1:
         return make_response("Please upload exactly one file.", 400)
 
