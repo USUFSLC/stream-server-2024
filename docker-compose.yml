@@ -30,7 +30,7 @@ services:
          - "5000:5000"
       volumes:
          - "./gunicorn.conf.py:/etc/gunicorn.conf.py"
-         - "./migrations:/fslc-stream/migrations"
+         - "./media:/var/stream:rw"
       depends_on:
          - postgres
    postgres:
