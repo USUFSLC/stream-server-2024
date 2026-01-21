@@ -36,9 +36,12 @@ def save_resource(storage: FileStorage) -> Resource:
     size = 0
 
     while bytesread := storage.stream.readinto(buf):
+        if bytesread < 4096:
+            buf = buf[:bytesread]
         hash.update(buf)
         f.write(buf)
-        size += bytesread;
+
+        size += bytesread
 
     f.close()
 
